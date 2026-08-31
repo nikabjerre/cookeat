@@ -625,14 +625,14 @@ function renderRecipes(){
   wasOpen.forEach(id => { const b = $('#'+id+' .ing-box', box); if(b) b.classList.add('open'); });
   state.recipes.forEach(r => {
     const root = $('#rc-'+r.id); if(!root) return;
-    root.querySelector('[data-toggle]').onclick = () => root.querySelector('.ing-box').classList.toggle('open');
-    root.querySelector('[data-edit]').onclick = () => editRecipeSheet(r.id);
-    root.querySelector('[data-del]').onclick = () => {
+    const on = (sel, fn) => { const el = root.querySelector(sel); if(el) el.onclick = fn; };
+    on('[data-toggle]', () => root.querySelector('.ing-box').classList.toggle('open'));
+    on('[data-edit]', () => editRecipeSheet(r.id));
+    on('[data-del]', () => {
       if(confirm('Delete “'+(r.name||'this recipe')+'”?'))
         mutate(s => s.recipes = s.recipes.filter(x => x.id !== r.id));
-    };
-    const refetch = root.querySelector('[data-refetch]');
-    if(refetch) refetch.onclick = () => fetchIngredients(r.id);
+    });
+    on('[data-refetch]', () => fetchIngredients(r.id));
     root.querySelectorAll('[data-ing]').forEach(inp => {
       inp.onchange = () => mutate(s => {
         const t = s.recipes.find(x=>x.id===r.id); if(!t) return;
