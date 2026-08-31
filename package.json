@@ -1,0 +1,9 @@
+{
+  "name": "family-dinner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Recipe book, weekly meal plan and auto grocery list for the family.",
+  "engines": {
+    "node": ">=18"
+  }
+}

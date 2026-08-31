@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Family Dinner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#c1502e">
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..48,500;12..48,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f3ec; --card:#ffffff; --card-2:#f3ede2;
+  --ink:#241d15; --ink-2:#6b6154; --line:rgba(36,29,21,.12);
+  --accent:#c1502e; --accent-ink:#a23f22; --accent-wash:#f7e3da;
+  --olive:#5f6f3c; --olive-wash:#e8ecdb;
+  --good:#3f7d3f; --warn:#c98a1a; --bad:#c0392b;
+  --shadow:0 1px 2px rgba(36,29,21,.05), 0 10px 24px -14px rgba(36,29,21,.22);
+  --tab-h:64px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#161310; --card:#211c17; --card-2:#2a241d;
+    --ink:#f0e9df; --ink-2:#a89c8c; --line:rgba(255,255,255,.12);
+    --accent:#e0733f; --accent-ink:#efa079; --accent-wash:#3a2418;
+    --olive:#9fb072; --olive-wash:#2b3020;
+    --good:#77c777; --warn:#e0b25a; --bad:#e8776a;
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 12px 30px -16px rgba(0,0,0,.6);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom));
+}
+h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;margin:0;letter-spacing:-.01em}
+.wrap{max-width:620px;margin:0 auto;padding:0 16px}
+button{font:inherit;cursor:pointer}
+a{color:var(--accent-ink)}
+.muted{color:var(--ink-2)}
+
+/* header */
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:10px;height:56px}
+header.top h1{font-size:20px}
+header.top h1 .fork{color:var(--accent)}
+.sync{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-2);
+  border:1px solid var(--line);border-radius:999px;padding:5px 10px;background:var(--card)}
+.sync .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-2)}
+.sync[data-s="synced"] .dot{background:var(--good)}
+.sync[data-s="saving"] .dot{background:var(--warn);animation:pulse 1s infinite}
+.sync[data-s="local"] .dot{background:var(--ink-2)}
+.sync[data-s="offline"] .dot{background:var(--bad)}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+main{padding-top:16px;padding-bottom:24px}
+.view{display:none}
+.view.active{display:block}
+.view-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.view-head h2{font-size:22px}
+
+/* cards / buttons */
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:9px 13px;
+  font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);border-color:transparent;color:#fff;font-weight:700}
+.btn.ghost{background:transparent}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:9px}
+.btn:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.iconbtn{border:none;background:transparent;color:var(--ink-2);padding:6px;border-radius:8px;font-size:16px;line-height:1}
+.iconbtn:hover{color:var(--ink);background:var(--card-2)}
+
+input[type=text],input[type=url],input[type=search],textarea{
+  font:inherit;width:100%;background:var(--card);color:var(--ink);
+  border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+textarea{min-height:76px;resize:vertical}
+label.fld{display:block;font-size:12px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-2);margin:0 0 5px}
+
+/* WEEK */
+.weeknav{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.weeknav .range{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:15px}
+.weeknav .today-btn{margin-left:auto}
+.day{padding:12px 14px;margin-bottom:10px}
+.day.is-today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent), var(--shadow)}
+.day .d-head{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.day .d-name{font-family:"Bricolage Grotesque",sans-serif;font-weight:700}
+.day .d-date{font-size:12px;color:var(--ink-2)}
+.day.is-today .d-name{color:var(--accent-ink)}
+.meal{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line)}
+.meal:first-of-type{border-top:none}
+.meal .m-main{flex:1;min-width:0}
+.meal .m-name{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meal .m-name a{color:var(--ink);text-decoration:none}
+.meal .m-name a:hover{color:var(--accent-ink)}
+.meal .m-sub{font-size:12px;color:var(--ink-2)}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--card-2);color:var(--ink-2);border:1px solid var(--line)}
+.tag.recipe{background:var(--accent-wash);color:var(--accent-ink);border-color:transparent}
+.tag.manual{background:var(--olive-wash);color:var(--olive);border-color:transparent}
+.addmeal{margin-top:8px;width:100%;justify-content:center;border-style:dashed;color:var(--ink-2)}
+
+/* RECIPES */
+.addrow{display:flex;flex-direction:column;gap:8px;padding:14px;margin-bottom:14px}
+.addrow .line2{display:flex;gap:8px}
+.addrow .line2 input{flex:1}
+.recipe{padding:12px 14px;margin-bottom:10px}
+.recipe .r-top{display:flex;align-items:flex-start;gap:10px}
+.recipe .r-name{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:16px;line-height:1.25}
+.recipe .r-name a{color:var(--ink);text-decoration:none}
+.recipe .r-host{font-size:12px;color:var(--ink-2);word-break:break-all}
+.recipe .r-actions{margin-left:auto;display:flex;gap:2px;flex-shrink:0}
+.recipe .r-img{width:52px;height:52px;border-radius:10px;object-fit:cover;background:var(--card-2);flex-shrink:0}
+.ing-toggle{margin-top:10px;font-size:13px;color:var(--accent-ink);background:none;border:none;padding:4px 0;font-weight:600}
+.ing-box{margin-top:8px;display:none}
+.ing-box.open{display:block}
+.ing-line{display:flex;gap:6px;align-items:center;padding:3px 0}
+.ing-line input{flex:1;padding:6px 9px;font-size:14px}
+.spin{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;display:inline-block;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* GROCERIES */
+.gweek{font-size:13px;color:var(--ink-2);margin-bottom:10px}
+.glist{padding:6px 0}
+.gitem{display:flex;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid var(--line)}
+.glist .gitem:first-child{border-top:none}
+.gitem .chk{width:22px;height:22px;flex-shrink:0;border:2px solid var(--line);border-radius:7px;background:var(--card);
+  display:grid;place-items:center;color:#fff;font-size:13px}
+.gitem.done .chk{background:var(--olive);border-color:var(--olive)}
+.gitem.done .g-text{text-decoration:line-through;color:var(--ink-2)}
+.g-main{flex:1;min-width:0}
+.g-text{font-weight:500}
+.g-text[contenteditable]{outline:none}
+.g-src{font-size:11px;color:var(--ink-2);margin-top:2px}
+.gitem .del{color:var(--ink-2)}
+.gactions{display:flex;gap:8px;margin:14px 0}
+.section-label{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);margin:18px 0 6px}
+.additem{display:flex;gap:8px;margin-top:8px}
+.additem input{flex:1}
+
+/* empty states */
+.empty{text-align:center;color:var(--ink-2);padding:40px 20px;font-size:15px}
+.empty .big{font-size:30px;display:block;margin-bottom:8px}
+
+/* tab bar */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--card);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs .wrap{display:flex;height:var(--tab-h)}
+nav.tabs button{flex:1;border:none;background:none;color:var(--ink-2);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600}
+nav.tabs button .ic{font-size:20px;line-height:1}
+nav.tabs button[aria-current="true"]{color:var(--accent)}
+
+/* toast */
+#toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:calc(var(--tab-h) + 18px);
+  background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:13px;font-weight:500;
+  opacity:0;pointer-events:none;transition:.2s;z-index:60;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* bottom sheet */
+#backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:.2s;z-index:40}
+#backdrop.open{opacity:1;pointer-events:auto}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--card);
+  border-radius:20px 20px 0 0;box-shadow:0 -10px 40px -12px rgba(0,0,0,.4);
+  transform:translateY(100%);transition:transform .24s ease;max-height:82vh;overflow:auto;
+  padding:8px 0 calc(20px + env(safe-area-inset-bottom))}
+#sheet.open{transform:translateY(0)}
+#sheet .grab{width:38px;height:4px;background:var(--line);border-radius:2px;margin:6px auto 10px}
+#sheet .sheet-body{padding:0 16px}
+#sheet h3{font-size:17px;margin-bottom:10px}
+.pick-search{margin-bottom:8px}
+.pick{display:flex;align-items:center;gap:10px;padding:11px 4px;border-top:1px solid var(--line);width:100%;
+  background:none;border-left:none;border-right:none;border-bottom:none;text-align:left;color:var(--ink)}
+.pick:first-of-type{border-top:none}
+.pick .p-name{flex:1;font-weight:500}
+.pick .p-host{font-size:11px;color:var(--ink-2)}
+.sheet-divider{display:flex;align-items:center;gap:10px;color:var(--ink-2);font-size:12px;margin:14px 0 8px}
+.sheet-divider::before,.sheet-divider::after{content:"";flex:1;height:1px;background:var(--line)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1><span class="fork">🍴</span> Family Dinner</h1>
+    <button class="sync" id="sync" data-s="local" title="Sync status">
+      <span class="dot"></span><span class="sync-label">This device</span>
+    </button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- WEEK -->
+  <section id="view-week" class="view active">
+    <div class="weeknav">
+      <button class="iconbtn" id="wk-prev" aria-label="Previous week">‹</button>
+      <span class="range" id="wk-range">–</span>
+      <button class="iconbtn" id="wk-next" aria-label="Next week">›</button>
+      <button class="btn sm ghost today-btn" id="wk-today">Today</button>
+    </div>
+    <div id="days"></div>
+  </section>
+
+  <!-- RECIPES -->
+  <section id="view-recipes" class="view">
+    <div class="view-head"><h2>Recipe book</h2></div>
+    <div class="card addrow">
+      <div>
+        <label class="fld" for="r-url">Recipe link</label>
+        <input type="url" id="r-url" placeholder="https://…  (paste a recipe URL)" autocomplete="off">
+      </div>
+      <div>
+        <label class="fld" for="r-name">Name <span class="muted" style="text-transform:none;font-weight:400">— optional, we'll try to fill it in</span></label>
+        <div class="line2">
+          <input type="text" id="r-name" placeholder="e.g. Grandma's lasagne" autocomplete="off">
+          <button class="btn primary" id="r-add">Add</button>
+        </div>
+      </div>
+    </div>
+    <div id="recipe-list"></div>
+  </section>
+
+  <!-- GROCERIES -->
+  <section id="view-groceries" class="view">
+    <div class="view-head"><h2>Grocery list</h2></div>
+    <p class="gweek" id="g-week">–</p>
+    <div class="card glist" id="g-derived"></div>
+    <div class="gactions">
+      <button class="btn sm" id="g-uncheck">Uncheck all</button>
+      <button class="btn sm" id="g-clear">Remove checked</button>
+    </div>
+    <div class="section-label">Added by hand</div>
+    <div class="card glist" id="g-extra"></div>
+    <div class="additem">
+      <input type="text" id="g-new" placeholder="Add an item…" autocomplete="off">
+      <button class="btn primary" id="g-addbtn">Add</button>
+    </div>
+    <p class="muted" style="font-size:12.5px;margin-top:16px">
+      Items come from the recipes and manual meals planned for this week. Ticking, editing and
+      deleting stick even if the plan changes.
+    </p>
+  </section>
+
+</main>
+
+<nav class="tabs">
+  <div class="wrap">
+    <button data-view="week" aria-current="true"><span class="ic">📅</span>Week</button>
+    <button data-view="recipes"><span class="ic">📖</span>Recipes</button>
+    <button data-view="groceries"><span class="ic">🛒</span>Groceries</button>
+  </div>
+</nav>
+
+<div id="backdrop"></div>
+<div id="sheet"><div class="grab"></div><div class="sheet-body" id="sheet-body"></div></div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* ---------------- utilities ---------------- */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s||'').toLowerCase().replace(/\s+/g,' ').trim();
+function hostOf(u){ try{ return new URL(u).hostname.replace(/^www\./,''); }catch{ return ''; } }
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2600); }
+
+function mondayOf(d){ const x=new Date(d); const wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); x.setHours(0,0,0,0); return x; }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function isoDate(d){ const x=new Date(d); return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); }
+const WD = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const fmtD = d => new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+
+/* ---------------- state + sync ---------------- */
+const LS_KEY = 'familydinner:v1';
+let state = { recipes:[], plan:{}, grocery:{done:{},hidden:{},edits:{},extra:[]}, rev:0, updatedAt:null };
+let mode = 'local';           // 'local' | 'cloud'
+let dirty = false;
+let saveTimer = null;
+let pollTimer = null;
+
+function normalizeState(s){
+  s = s && typeof s === 'object' ? s : {};
+  s.recipes = Array.isArray(s.recipes) ? s.recipes : [];
+  s.plan = s.plan && typeof s.plan === 'object' ? s.plan : {};
+  s.grocery = s.grocery && typeof s.grocery === 'object' ? s.grocery : {};
+  s.grocery.done = s.grocery.done || {}; s.grocery.hidden = s.grocery.hidden || {};
+  s.grocery.edits = s.grocery.edits || {}; s.grocery.extra = Array.isArray(s.grocery.extra) ? s.grocery.extra : [];
+  s.rev = s.rev || 0;
+  return s;
+}
+function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch{} }
+function loadLocal(){ try{ const r = localStorage.getItem(LS_KEY); if(r) state = normalizeState(JSON.parse(r)); }catch{} }
+
+function setSync(s){
+  const el = $('#sync'); el.dataset.s = s;
+  el.querySelector('.sync-label').textContent =
+    s==='synced' ? 'Synced' : s==='saving' ? 'Saving…' : s==='offline' ? 'Offline' : 'This device';
+}
+
+function mutate(fn){
+  fn(state);
+  dirty = true;
+  saveLocal();
+  render();
+  scheduleSave();
+}
+
+function scheduleSave(){
+  if(mode !== 'cloud'){ return; }
+  setSync('saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(pushState, 700);
+}
+
+async function pushState(){
+  if(mode !== 'cloud') return;
+  const payload = { recipes:state.recipes, plan:state.plan, grocery:state.grocery, baseRev:state.rev };
+  try{
+    const r = await fetch('/api/state', {
+      method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+    });
+    if(r.status === 409){
+      const j = await r.json();
+      state = normalizeState(j.current);
+      dirty = false; saveLocal(); render();
+      setSync('synced');
+      toast('Updated with the family’s latest version');
+      return;
+    }
+    if(!r.ok) throw new Error('save '+r.status);
+    const j = await r.json();
+    state.rev = j.rev; state.updatedAt = j.updatedAt;
+    dirty = false; saveLocal();
+    setSync('synced');
+  }catch(e){
+    setSync('offline');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(pushState, 4000);   // keep retrying
+  }
+}
+
+async function pullState(force){
+  if(mode !== 'cloud') return;
+  if(dirty && !force) return;
+  try{
+    const r = await fetch('/api/state', {cache:'no-store'});
+    if(!r.ok) throw new Error('get '+r.status);
+    const j = await r.json();
+    if(j.error) return;
+    if((j.rev||0) > (state.rev||0) && !dirty){
+      state = normalizeState(j); saveLocal(); render();
+      setSync('synced');
+    }
+  }catch(e){ setSync('offline'); }
+}
+
+async function boot(){
+  loadLocal();
+  render();
+  try{
+    const r = await fetch('/api/state', {cache:'no-store'});
+    if(r.status === 503){ mode='local'; setSync('local'); return; }     // no DB connected
+    if(!r.ok) throw new Error(r.status);
+    const server = normalizeState(await r.json());
+    mode = 'cloud';
+    if((server.rev||0) === 0 && (state.recipes.length || Object.keys(state.plan).length)){
+      // first run with a fresh DB but we have local data -> push it up
+      state.rev = 0;
+      dirty = true; render(); scheduleSave();
+    } else {
+      state = server; saveLocal(); render();
+    }
+    setSync('synced');
+    clearInterval(pollTimer);
+    pollTimer = setInterval(()=>{ if(document.visibilityState==='visible') pullState(); }, 15000);
+  }catch(e){
+    mode='local'; setSync(navigator.onLine ? 'local' : 'offline');
+  }
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') pullState(); });
+window.addEventListener('online', ()=>{ if(mode==='cloud'){ pushState(); pullState(true); } });
+
+/* ---------------- navigation ---------------- */
+let weekOffset = 0;
+function showView(v){
+  $$('.view').forEach(s => s.classList.toggle('active', s.id === 'view-'+v));
+  $$('nav.tabs button').forEach(b => b.setAttribute('aria-current', String(b.dataset.view === v)));
+  window.scrollTo(0,0);
+}
+$$('nav.tabs button').forEach(b => b.onclick = () => showView(b.dataset.view));
+$('#wk-prev').onclick = () => { weekOffset--; renderWeek(); renderGroceries(); };
+$('#wk-next').onclick = () => { weekOffset++; renderWeek(); renderGroceries(); };
+$('#wk-today').onclick = () => { weekOffset = 0; renderWeek(); renderGroceries(); };
+
+/* ---------------- bottom sheet ---------------- */
+function openSheet(html){ $('#sheet-body').innerHTML = html; $('#sheet').classList.add('open'); $('#backdrop').classList.add('open'); }
+function closeSheet(){ $('#sheet').classList.remove('open'); $('#backdrop').classList.remove('open'); }
+$('#backdrop').onclick = closeSheet;
+
+/* ---------------- WEEK view ---------------- */
+function weekStart(){ return addDays(mondayOf(new Date()), weekOffset*7); }
+function render(){ renderWeek(); renderRecipes(); renderGroceries(); }
+
+function renderWeek(){
+  const start = weekStart();
+  const end = addDays(start, 6);
+  $('#wk-range').textContent = fmtD(start) + ' – ' + fmtD(end) + (weekOffset===0 ? '  · this week' : '');
+  const todayIso = isoDate(new Date());
+  const box = $('#days'); box.innerHTML = '';
+  for(let i=0;i<7;i++){
+    const d = addDays(start, i), di = isoDate(d);
+    const meals = state.plan[di] || [];
+    const el = document.createElement('div');
+    el.className = 'card day' + (di===todayIso ? ' is-today' : '');
+    el.innerHTML =
+      '<div class="d-head"><span class="d-name">'+WD[i]+'</span><span class="d-date">'+fmtD(d)+'</span></div>' +
+      meals.map(m => mealRow(di, m)).join('') +
+      '<button class="btn addmeal" data-add="'+di+'">+ Add meal</button>';
+    box.appendChild(el);
+  }
+  $$('#days [data-add]').forEach(b => b.onclick = () => addMealSheet(b.dataset.add));
+  $$('#days [data-rm]').forEach(b => b.onclick = () => {
+    const [di,id] = b.dataset.rm.split('|');
+    mutate(s => { s.plan[di] = (s.plan[di]||[]).filter(x => x.id !== id); if(!s.plan[di].length) delete s.plan[di]; });
+  });
+}
+function mealRow(di, m){
+  let name, sub;
+  if(m.kind === 'recipe'){
+    const r = state.recipes.find(x => x.id === m.recipeId);
+    if(!r){ name = '<span class="muted">(deleted recipe)</span>'; sub = ''; }
+    else {
+      name = r.url ? '<a href="'+esc(r.url)+'" target="_blank" rel="noopener">'+esc(r.name||hostOf(r.url))+' ↗</a>' : esc(r.name||'Recipe');
+      sub = '<span class="tag recipe">recipe</span>' + (r.ingredients&&r.ingredients.length ? ' <span class="m-sub">'+r.ingredients.length+' ingredients</span>' : '');
+    }
+  } else {
+    name = esc(m.title || 'Meal');
+    const n = (m.ingredients||[]).length;
+    sub = '<span class="tag manual">manual</span>' + (n ? ' <span class="m-sub">'+n+' items</span>' : '');
+  }
+  return '<div class="meal"><div class="m-main"><div class="m-name">'+name+'</div><div>'+sub+'</div></div>' +
+         '<button class="iconbtn" data-rm="'+di+'|'+m.id+'" aria-label="Remove">✕</button></div>';
+}
+
+function addMealSheet(di){
+  const d = new Date(di);
+  const list = [...state.recipes].sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  openSheet(
+    '<h3>Add meal · '+WD[(d.getDay()+6)%7]+' '+fmtD(d)+'</h3>' +
+    (list.length ? '<input type="search" class="pick-search" id="pk-q" placeholder="Search recipes…">' : '') +
+    '<div id="pk-list">' + (list.length ? list.map(pickRow).join('') :
+      '<p class="muted" style="padding:8px 0">No recipes saved yet — add one in the Recipes tab, or enter a meal by hand below.</p>') + '</div>' +
+    '<div class="sheet-divider">or</div>' +
+    '<label class="fld" for="mm-title">Meal (not linked to a recipe)</label>' +
+    '<input type="text" id="mm-title" placeholder="e.g. Leftovers / Order pizza / Fish &amp; salad">' +
+    '<label class="fld" for="mm-ing" style="margin-top:10px">Ingredients for the list — optional, one per line</label>' +
+    '<textarea id="mm-ing" placeholder="2 salmon fillets&#10;bag of salad&#10;lemon"></textarea>' +
+    '<button class="btn primary" id="mm-add" style="margin-top:10px;width:100%">Add manual meal</button>'
+  );
+  const q = $('#pk-q');
+  if(q) q.oninput = () => {
+    const v = norm(q.value);
+    $('#pk-list').innerHTML = list.filter(r => norm(r.name+' '+hostOf(r.url)).includes(v)).map(pickRow).join('')
+      || '<p class="muted" style="padding:8px 0">No match</p>';
+    bindPicks(di);
+  };
+  bindPicks(di);
+  $('#mm-add').onclick = () => {
+    const title = $('#mm-title').value.trim();
+    if(!title){ $('#mm-title').focus(); return; }
+    const ing = $('#mm-ing').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    mutate(s => { (s.plan[di] = s.plan[di]||[]).push({ id:uid(), kind:'manual', title, ingredients:ing }); });
+    closeSheet(); toast('Added');
+  };
+}
+function pickRow(r){
+  return '<button class="pick" data-pick="'+r.id+'"><span class="p-name">'+esc(r.name||hostOf(r.url)||'Recipe')+'</span>' +
+    (r.url ? '<span class="p-host">'+esc(hostOf(r.url))+'</span>' : '') + '</button>';
+}
+function bindPicks(di){
+  $$('#pk-list [data-pick]').forEach(b => b.onclick = () => {
+    mutate(s => { (s.plan[di] = s.plan[di]||[]).push({ id:uid(), kind:'recipe', recipeId:b.dataset.pick }); });
+    closeSheet(); toast('Added to '+fmtD(new Date(di)));
+  });
+}
+
+/* ---------------- RECIPES view ---------------- */
+$('#r-add').onclick = addRecipe;
+$('#r-url').addEventListener('keydown', e => { if(e.key==='Enter') $('#r-name').focus(); });
+$('#r-name').addEventListener('keydown', e => { if(e.key==='Enter') addRecipe(); });
+
+function addRecipe(){
+  const url = $('#r-url').value.trim();
+  const name = $('#r-name').value.trim();
+  if(!url && !name){ $('#r-url').focus(); return; }
+  if(url && !/^https?:\/\//i.test(url)){ toast('Link should start with http…'); return; }
+  const rec = { id:uid(), name, url, ingredients:[], img:null, addedAt:Date.now(), loading:!!url };
+  mutate(s => s.recipes.unshift(rec));
+  $('#r-url').value = ''; $('#r-name').value = '';
+  if(url) fetchIngredients(rec.id);
+}
+
+async function fetchIngredients(id){
+  const rec = state.recipes.find(r => r.id === id);
+  if(!rec || !rec.url) return;
+  mutate(s => { const r = s.recipes.find(x=>x.id===id); if(r) r.loading = true; });
+  try{
+    const r = await fetch('/api/parse-recipe?url=' + encodeURIComponent(rec.url));
+    const j = await r.json();
+    mutate(s => {
+      const t = s.recipes.find(x => x.id === id); if(!t) return;
+      t.loading = false;
+      if(Array.isArray(j.ingredients) && j.ingredients.length) t.ingredients = j.ingredients;
+      if(!t.name && j.title) t.name = j.title;
+      if(j.image && !t.img) t.img = j.image;
+    });
+    if(!j.ingredients || !j.ingredients.length) toast('No ingredients found on that page — add them by hand');
+    else toast(j.ingredients.length + ' ingredients found');
+  }catch(e){
+    mutate(s => { const t = s.recipes.find(x=>x.id===id); if(t) t.loading = false; });
+    toast('Could not read that page');
+  }
+}
+
+function renderRecipes(){
+  const box = $('#recipe-list');
+  if(!state.recipes.length){
+    box.innerHTML = '<div class="empty"><span class="big">📖</span>No recipes yet.<br>Paste a link to a recipe you like above.</div>';
+    return;
+  }
+  const wasOpen = new Set($$('.recipe .ing-box.open', box).map(e => e.closest('.recipe').id));
+  box.innerHTML = state.recipes.map(recipeCard).join('');
+  wasOpen.forEach(id => { const b = $('#'+id+' .ing-box', box); if(b) b.classList.add('open'); });
+  state.recipes.forEach(r => {
+    const root = $('#rc-'+r.id); if(!root) return;
+    root.querySelector('[data-toggle]').onclick = () => root.querySelector('.ing-box').classList.toggle('open');
+    root.querySelector('[data-edit]').onclick = () => editRecipeSheet(r.id);
+    root.querySelector('[data-del]').onclick = () => {
+      if(confirm('Delete “'+(r.name||'this recipe')+'”?'))
+        mutate(s => s.recipes = s.recipes.filter(x => x.id !== r.id));
+    };
+    const refetch = root.querySelector('[data-refetch]');
+    if(refetch) refetch.onclick = () => fetchIngredients(r.id);
+    root.querySelectorAll('[data-ing]').forEach(inp => {
+      inp.onchange = () => mutate(s => {
+        const t = s.recipes.find(x=>x.id===r.id); if(!t) return;
+        const i = +inp.dataset.ing;
+        if(inp.value.trim()) t.ingredients[i] = inp.value.trim();
+        else t.ingredients.splice(i,1);
+      });
+    });
+    const addLine = root.querySelector('[data-addline]');
+    if(addLine) addLine.onclick = () => mutate(s => {
+      const t = s.recipes.find(x=>x.id===r.id); if(t) t.ingredients.push('');
+    });
+  });
+}
+function recipeCard(r){
+  const ings = r.ingredients || [];
+  return '<div class="card recipe" id="rc-'+r.id+'">' +
+    '<div class="r-top">' +
+      (r.img ? '<img class="r-img" src="'+esc(r.img)+'" alt="" loading="lazy" onerror="this.remove()">' : '') +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="r-name">' + (r.url ? '<a href="'+esc(r.url)+'" target="_blank" rel="noopener">'+esc(r.name||hostOf(r.url))+' ↗</a>' : esc(r.name||'Recipe')) + '</div>' +
+        (r.url ? '<div class="r-host">'+esc(hostOf(r.url))+'</div>' : '') +
+      '</div>' +
+      '<div class="r-actions">' +
+        '<button class="iconbtn" data-edit title="Edit">✎</button>' +
+        '<button class="iconbtn" data-del title="Delete">🗑</button>' +
+      '</div>' +
+    '</div>' +
+    (r.loading
+      ? '<div class="ing-toggle"><span class="spin"></span> reading the recipe…</div>'
+      : '<button class="ing-toggle" data-toggle>Ingredients ('+ings.length+') ▾</button>') +
+    '<div class="ing-box">' +
+      ings.map((x,i) => '<div class="ing-line"><input type="text" data-ing="'+i+'" value="'+esc(x)+'"></div>').join('') +
+      '<div style="display:flex;gap:8px;margin-top:8px">' +
+        '<button class="btn sm ghost" data-addline>+ line</button>' +
+        (r.url ? '<button class="btn sm ghost" data-refetch>↻ re-read site</button>' : '') +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+function editRecipeSheet(id){
+  const r = state.recipes.find(x => x.id === id); if(!r) return;
+  openSheet(
+    '<h3>Edit recipe</h3>' +
+    '<label class="fld" for="er-name">Name</label><input type="text" id="er-name" value="'+esc(r.name)+'">' +
+    '<label class="fld" for="er-url" style="margin-top:10px">Link</label><input type="url" id="er-url" value="'+esc(r.url)+'">' +
+    '<button class="btn primary" id="er-save" style="margin-top:12px;width:100%">Save</button>'
+  );
+  $('#er-save').onclick = () => {
+    mutate(s => { const t = s.recipes.find(x=>x.id===id); if(t){ t.name = $('#er-name').value.trim(); t.url = $('#er-url').value.trim(); } });
+    closeSheet();
+  };
+}
+
+/* ---------------- GROCERIES view ---------------- */
+function weekMeals(){
+  const start = weekStart(), out = [];
+  for(let i=0;i<7;i++){
+    const di = isoDate(addDays(start,i));
+    (state.plan[di]||[]).forEach(m => out.push(m));
+  }
+  return out;
+}
+function derivedGroceries(){
+  const map = new Map();  // key -> {key, text, sources:Set}
+  weekMeals().forEach(m => {
+    let lines = [], src = '';
+    if(m.kind === 'recipe'){
+      const r = state.recipes.find(x => x.id === m.recipeId);
+      if(!r) return; lines = r.ingredients || []; src = r.name || hostOf(r.url) || 'Recipe';
+    } else { lines = m.ingredients || []; src = m.title || 'Meal'; }
+    lines.forEach(raw => {
+      const key = norm(raw); if(!key) return;
+      if(!map.has(key)) map.set(key, { key, text: raw.trim(), sources: new Set() });
+      map.get(key).sources.add(src);
+    });
+  });
+  return [...map.values()]
+    .filter(it => !state.grocery.hidden[it.key])
+    .map(it => ({ ...it, text: state.grocery.edits[it.key] ?? it.text, done: !!state.grocery.done[it.key] }))
+    .sort((a,b) => (a.done - b.done) || a.text.localeCompare(b.text));
+}
+function renderGroceries(){
+  const start = weekStart(), end = addDays(start,6);
+  $('#g-week').textContent = 'For ' + fmtD(start) + ' – ' + fmtD(end);
+  const items = derivedGroceries();
+  const box = $('#g-derived');
+  box.innerHTML = items.length ? items.map(gRow).join('')
+    : '<div class="empty" style="padding:26px"><span class="big">🛒</span>Nothing planned yet.<br>Add meals in the Week tab.</div>';
+  $$('.gitem', box).forEach((el, i) => bindGRow(el, items[i]));
+
+  const ex = $('#g-extra');
+  ex.innerHTML = state.grocery.extra.length ? state.grocery.extra.map(exRow).join('')
+    : '<div class="muted" style="padding:12px 14px;font-size:13px">Nothing added by hand.</div>';
+  $$('.gitem', ex).forEach((el, i) => bindExRow(el, state.grocery.extra[i]));
+}
+function gRow(it){
+  return '<div class="gitem'+(it.done?' done':'')+'">' +
+    '<button class="chk" data-chk aria-label="Bought">'+(it.done?'✓':'')+'</button>' +
+    '<div class="g-main"><div class="g-text" data-text contenteditable="true" spellcheck="false">'+esc(it.text)+'</div>' +
+      '<div class="g-src">'+esc([...it.sources].join(', '))+'</div></div>' +
+    '<button class="iconbtn del" data-del aria-label="Remove">✕</button></div>';
+}
+function bindGRow(el, it){
+  if(!el) return;
+  el.querySelector('[data-chk]').onclick = () => mutate(s => {
+    if(s.grocery.done[it.key]) delete s.grocery.done[it.key]; else s.grocery.done[it.key] = true;
+  });
+  el.querySelector('[data-del]').onclick = () => mutate(s => { s.grocery.hidden[it.key] = true; delete s.grocery.done[it.key]; });
+  const t = el.querySelector('[data-text]');
+  t.onblur = () => {
+    const v = t.textContent.trim();
+    mutate(s => {
+      if(!v){ s.grocery.hidden[it.key] = true; }
+      else if(v !== it.text){ s.grocery.edits[it.key] = v; }
+    });
+  };
+  t.onkeydown = e => { if(e.key==='Enter'){ e.preventDefault(); t.blur(); } };
+}
+function exRow(x){
+  return '<div class="gitem'+(x.done?' done':'')+'">' +
+    '<button class="chk" data-chk aria-label="Bought">'+(x.done?'✓':'')+'</button>' +
+    '<div class="g-main"><div class="g-text" data-text contenteditable="true" spellcheck="false">'+esc(x.text)+'</div></div>' +
+    '<button class="iconbtn del" data-del aria-label="Remove">✕</button></div>';
+}
+function bindExRow(el, x){
+  if(!el) return;
+  el.querySelector('[data-chk]').onclick = () => mutate(s => { const t = s.grocery.extra.find(e=>e.id===x.id); if(t) t.done = !t.done; });
+  el.querySelector('[data-del]').onclick = () => mutate(s => s.grocery.extra = s.grocery.extra.filter(e => e.id !== x.id));
+  const tx = el.querySelector('[data-text]');
+  tx.onblur = () => { const v = tx.textContent.trim();
+    mutate(s => { const t = s.grocery.extra.find(e=>e.id===x.id); if(!t) return; if(v) t.text = v; else s.grocery.extra = s.grocery.extra.filter(e=>e.id!==x.id); }); };
+  tx.onkeydown = e => { if(e.key==='Enter'){ e.preventDefault(); tx.blur(); } };
+}
+$('#g-addbtn').onclick = addGItem;
+$('#g-new').addEventListener('keydown', e => { if(e.key==='Enter') addGItem(); });
+function addGItem(){
+  const v = $('#g-new').value.trim(); if(!v) return;
+  mutate(s => s.grocery.extra.push({ id:uid(), text:v, done:false }));
+  $('#g-new').value = ''; $('#g-new').focus();
+}
+$('#g-uncheck').onclick = () => mutate(s => { s.grocery.done = {}; s.grocery.extra.forEach(x => x.done = false); });
+$('#g-clear').onclick = () => mutate(s => {
+  derivedGroceries().forEach(it => { if(it.done){ s.grocery.hidden[it.key] = true; delete s.grocery.done[it.key]; } });
+  s.grocery.extra = s.grocery.extra.filter(x => !x.done);
+});
+
+/* ---------------- go ---------------- */
+boot();
+</script>
+</body>
+</html>

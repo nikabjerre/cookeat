@@ -1,0 +1,17 @@
+{
+  "name": "Family Dinner",
+  "short_name": "Dinner",
+  "description": "Recipe book, weekly meal plan and grocery list for the family.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f3ec",
+  "theme_color": "#c1502e",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512'%3E%3Crect width='512' height='512' rx='96' fill='%23c1502e'/%3E%3Ctext x='256' y='355' font-size='300' text-anchor='middle'%3E%F0%9F%8D%B4%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
