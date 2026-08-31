@@ -512,8 +512,28 @@ async function fetchIngredients(id){
   const rec = state.recipes.find(r => r.id === id);
   if(!rec || !rec.url) return;
   mutate(s => { const r = s.recipes.find(x=>x.id===id); if(r) r.loading = true; });
+
+  const ctrl = 'AbortController' in window ? new AbortController() : null;
+  const to = setTimeout(() => ctrl && ctrl.abort(), 30000);
+  const stop = (msg, openBox) => {
+    clearTimeout(to);
+    mutate(s => { const t = s.recipes.find(x=>x.id===id); if(t) t.loading = false; });
+    if(openBox){ const b = $('#rc-'+id+' .ing-box'); if(b) b.classList.add('open'); }
+    if(msg) toast(msg);
+  };
+
   try{
-    const r = await fetch('/api/parse-recipe?url=' + encodeURIComponent(rec.url));
+    const r = await fetch('/api/parse-recipe?url=' + encodeURIComponent(rec.url), { signal: ctrl && ctrl.signal });
+    clearTimeout(to);
+    if(!r.ok){
+      // most likely: running without the backend (local preview / not deployed yet)
+      stop(r.status === 404
+        ? 'Reading recipes needs the deployed app — add ingredients by hand for now'
+        : 'Could not read that page (' + r.status + ') — add ingredients by hand', true);
+      return;
+    }
+    const ct = r.headers.get('content-type') || '';
+    if(!ct.includes('json')){ stop('Reading recipes needs the deployed app — add ingredients by hand', true); return; }
     const j = await r.json();
     mutate(s => {
       const t = s.recipes.find(x => x.id === id); if(!t) return;
@@ -522,11 +542,16 @@ async function fetchIngredients(id){
       if(!t.name && j.title) t.name = j.title;
       if(j.image && !t.img) t.img = j.image;
     });
-    if(!j.ingredients || !j.ingredients.length) toast('No ingredients found on that page — add them by hand');
-    else toast(j.ingredients.length + ' ingredients found');
+    clearTimeout(to);
+    if(!j.ingredients || !j.ingredients.length){
+      stop('No ingredient list found on that page — add them by hand', true);
+    } else {
+      toast(j.ingredients.length + ' ingredients found');
+    }
   }catch(e){
-    mutate(s => { const t = s.recipes.find(x=>x.id===id); if(t) t.loading = false; });
-    toast('Could not read that page');
+    stop(e && e.name === 'AbortError'
+      ? 'That site took too long — add ingredients by hand'
+      : 'Could not reach the recipe reader — add ingredients by hand', true);
   }
 }
 
