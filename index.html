@@ -99,6 +99,11 @@ label.fld{display:block;font-size:12px;font-weight:600;letter-spacing:.03em;text
 .meal .m-name{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .meal .m-name a{color:var(--ink);text-decoration:none}
 .meal .m-name a:hover{color:var(--accent-ink)}
+.m-edit{background:none;border:none;padding:0;font:inherit;font-weight:500;color:var(--ink);
+  text-align:left;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
+.m-edit .pen{color:var(--ink-2);font-size:12px;margin-left:2px}
+.m-edit:hover{color:var(--accent-ink)}
+.m-edit:hover .pen{color:var(--accent-ink)}
 .meal .m-sub{font-size:12px;color:var(--ink-2)}
 .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--card-2);color:var(--ink-2);border:1px solid var(--line)}
 .tag.recipe{background:var(--accent-wash);color:var(--accent-ink);border-color:transparent}
@@ -409,7 +414,10 @@ window.addEventListener('online', ()=>{ if(mode==='cloud'){ pushState(); pullSta
 /* ---------------- navigation ---------------- */
 let weekOffset = 0;      // Week tab
 let gWeekOffset = 0;     // Groceries tab (independent)
-let gScope = 'week';     // 'week' | 'YYYY-MM-DD'
+let gSel = null;         // Set of selected 'YYYY-MM-DD' (null until first render -> all 7)
+function gWeekDates(){ const s = gWeekStart(); return Array.from({length:7}, (_,i) => isoDate(addDays(s,i))); }
+function ensureSel(){ if(!gSel) gSel = new Set(gWeekDates()); }
+function shiftSel(days){ if(!gSel) return; gSel = new Set([...gSel].map(d => isoDate(addDays(parseISO(d), days)))); }
 function showView(v){
   $$('.view').forEach(s => s.classList.toggle('active', s.id === 'view-'+v));
   $$('nav.tabs button').forEach(b => b.setAttribute('aria-current', String(b.dataset.view === v)));
@@ -420,9 +428,9 @@ $('#wk-prev').onclick = () => { weekOffset--; renderWeek(); };
 $('#wk-next').onclick = () => { weekOffset++; renderWeek(); };
 $('#wk-today').onclick = () => { weekOffset = 0; renderWeek(); };
 
-$('#g-prev').onclick = () => { gWeekOffset--; if(gScope!=='week') gScope = isoDate(addDays(parseISO(gScope),-7)); renderGroceries(); };
-$('#g-next').onclick = () => { gWeekOffset++; if(gScope!=='week') gScope = isoDate(addDays(parseISO(gScope),7)); renderGroceries(); };
-$('#g-thisweek').onclick = () => { gWeekOffset = 0; gScope = 'week'; renderGroceries(); };
+$('#g-prev').onclick = () => { gWeekOffset--; shiftSel(-7); renderGroceries(); };
+$('#g-next').onclick = () => { gWeekOffset++; shiftSel(7); renderGroceries(); };
+$('#g-thisweek').onclick = () => { gWeekOffset = 0; gSel = new Set(gWeekDates()); renderGroceries(); };
 
 /* ---------------- bottom sheet ---------------- */
 function openSheet(html){ $('#sheet-body').innerHTML = html; $('#sheet').classList.add('open'); $('#backdrop').classList.add('open'); }
@@ -455,6 +463,9 @@ function renderWeek(){
     const [di,id] = b.dataset.rm.split('|');
     mutate(s => { s.plan[di] = (s.plan[di]||[]).filter(x => x.id !== id); if(!s.plan[di].length) delete s.plan[di]; });
   });
+  $$('#days [data-editmeal]').forEach(b => b.onclick = () => {
+    const [di,id] = b.dataset.editmeal.split('|'); editMealSheet(di, id);
+  });
 }
 function mealRow(di, m){
   let name, sub;
@@ -466,12 +477,36 @@ function mealRow(di, m){
       sub = '<span class="tag recipe">recipe</span>' + (r.ingredients&&r.ingredients.length ? ' <span class="m-sub">'+r.ingredients.length+' ingredients</span>' : '');
     }
   } else {
-    name = esc(m.title || 'Meal');
+    name = '<button class="m-edit" data-editmeal="'+di+'|'+m.id+'">'+esc(m.title || 'Meal')+' <span class="pen">✎</span></button>';
     const n = (m.ingredients||[]).length;
-    sub = '<span class="tag manual">manual</span>' + (n ? ' <span class="m-sub">'+n+' items</span>' : '');
+    sub = '<span class="tag manual">manual</span>' + (n ? ' <span class="m-sub">'+n+' item'+(n>1?'s':'')+'</span>' : ' <span class="m-sub">tap to add ingredients</span>');
   }
   return '<div class="meal"><div class="m-main"><div class="m-name">'+name+'</div><div>'+sub+'</div></div>' +
          '<button class="iconbtn" data-rm="'+di+'|'+m.id+'" aria-label="Remove">✕</button></div>';
+}
+function editMealSheet(di, id){
+  const m = (state.plan[di]||[]).find(x => x.id === id);
+  if(!m || m.kind !== 'manual') return;
+  const d = parseISO(di);
+  openSheet(
+    '<h3>Edit meal · '+WD[(d.getDay()+6)%7]+' '+fmtD(d)+'</h3>' +
+    '<label class="fld" for="em-title">Meal</label>' +
+    '<input type="text" id="em-title" value="'+esc(m.title||'')+'">' +
+    '<label class="fld" for="em-ing" style="margin-top:10px">Ingredients for the grocery list — one per line</label>' +
+    '<textarea id="em-ing" placeholder="2 salmon fillets&#10;bag of salad&#10;lemon">'+esc((m.ingredients||[]).join('\n'))+'</textarea>' +
+    '<button class="btn primary" id="em-save" style="margin-top:12px;width:100%">Save</button>' +
+    '<button class="btn ghost" id="em-del" style="margin-top:8px;width:100%;color:var(--bad)">Remove this meal</button>'
+  );
+  $('#em-save').onclick = () => {
+    const title = $('#em-title').value.trim() || 'Meal';
+    const ing = $('#em-ing').value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+    mutate(s => { const t = (s.plan[di]||[]).find(x => x.id === id); if(t){ t.title = title; t.ingredients = ing; } });
+    closeSheet(); toast('Saved');
+  };
+  $('#em-del').onclick = () => {
+    mutate(s => { s.plan[di] = (s.plan[di]||[]).filter(x => x.id !== id); if(!s.plan[di].length) delete s.plan[di]; });
+    closeSheet();
+  };
 }
 
 function addMealSheet(di){
@@ -654,11 +689,7 @@ function editRecipeSheet(id){
 
 /* ---------------- GROCERIES view ---------------- */
 function gWeekStart(){ return addDays(mondayOf(new Date()), gWeekOffset*7); }
-function scopedDates(){
-  if(gScope !== 'week') return [gScope];
-  const s = gWeekStart();
-  return Array.from({length:7}, (_,i) => isoDate(addDays(s,i)));
-}
+function scopedDates(){ ensureSel(); return [...gSel].sort(); }
 function scopedMeals(){
   const out = [];
   scopedDates().forEach(di => (state.plan[di]||[]).forEach(m => out.push(m)));
@@ -684,30 +715,43 @@ function derivedGroceries(){
     .sort((a,b) => (a.done - b.done) || a.text.localeCompare(b.text));
 }
 function renderGroceries(){
+  ensureSel();
   const start = gWeekStart(), end = addDays(start,6);
+  const week = gWeekDates();
   $('#g-range').textContent = fmtD(start) + ' – ' + fmtD(end) + (gWeekOffset===0 ? '  · this week' : '');
 
-  // day chips for the selected week
   const todayIso = isoDate(new Date());
-  const chips = ['<button class="chip" data-scope="week" aria-pressed="'+(gScope==='week')+'">Whole week</button>'];
+  const allWeekSelected = week.every(d => gSel.has(d)) && gSel.size === 7;
+  const chips = ['<button class="chip" data-scope="week" aria-pressed="'+allWeekSelected+'">Whole week</button>'];
   for(let i=0;i<7;i++){
     const d = addDays(start,i), di = isoDate(d);
     const n = (state.plan[di]||[]).length;
-    chips.push('<button class="chip'+(di===todayIso?' today':'')+'" data-scope="'+di+'" aria-pressed="'+(gScope===di)+'">' +
+    chips.push('<button class="chip'+(di===todayIso?' today':'')+'" data-scope="'+di+'" aria-pressed="'+gSel.has(di)+'">' +
       '<span>'+WD[i].slice(0,3)+' '+d.getDate()+'</span>' +
       (n ? '<span class="cn">'+n+'</span>' : '') + '</button>');
   }
   $('#g-chips').innerHTML = chips.join('');
-  $$('#g-chips .chip').forEach(b => b.onclick = () => { gScope = b.dataset.scope; renderGroceries(); });
+  $$('#g-chips .chip').forEach(b => b.onclick = () => {
+    const v = b.dataset.scope;
+    if(v === 'week'){ gSel = allWeekSelected ? new Set() : new Set(week); }
+    else if(allWeekSelected){ gSel = new Set([v]); }      // from "whole week" → focus this one day
+    else { gSel.has(v) ? gSel.delete(v) : gSel.add(v); }  // then add / remove days freely
+    renderGroceries();
+  });
 
-  $('#g-week').textContent = gScope === 'week'
-    ? 'For ' + fmtD(start) + ' – ' + fmtD(end)
-    : 'For ' + WD[(parseISO(gScope).getDay()+6)%7] + ' ' + fmtD(parseISO(gScope));
+  const selSorted = [...gSel].sort();
+  $('#g-week').textContent =
+    allWeekSelected ? 'For ' + fmtD(start) + ' – ' + fmtD(end)
+    : selSorted.length === 0 ? 'No days selected'
+    : selSorted.length === 1 ? 'For ' + WD[(parseISO(selSorted[0]).getDay()+6)%7] + ' ' + fmtD(parseISO(selSorted[0]))
+    : 'For ' + selSorted.map(d => WD[(parseISO(d).getDay()+6)%7].slice(0,3) + ' ' + parseISO(d).getDate()).join(', ');
 
   const items = derivedGroceries();
   const box = $('#g-derived');
   box.innerHTML = items.length ? items.map(gRow).join('')
-    : '<div class="empty" style="padding:26px"><span class="big">🛒</span>Nothing planned yet.<br>Add meals in the Week tab.</div>';
+    : '<div class="empty" style="padding:26px"><span class="big">🛒</span>' +
+      (gSel.size === 0 ? 'Pick one or more days above.' : 'Nothing planned for the selected day(s).<br>Add meals in the Week tab.') +
+      '</div>';
   $$('.gitem', box).forEach((el, i) => bindGRow(el, items[i]));
 
   const ex = $('#g-extra');
