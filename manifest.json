@@ -1,14 +1,14 @@
 {
-  "name": "Family Dinner",
-  "short_name": "Dinner",
+  "name": "CookEat",
+  "short_name": "CookEat",
   "description": "Recipe book, weekly meal plan and grocery list for the family.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f7f3ec",
-  "theme_color": "#c1502e",
+  "background_color": "#f4f1e9",
+  "theme_color": "#2f5d4f",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512'%3E%3Crect width='512' height='512' rx='96' fill='%23c1502e'/%3E%3Ctext x='256' y='355' font-size='300' text-anchor='middle'%3E%F0%9F%8D%B4%3C/text%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512'%3E%3Crect width='512' height='512' rx='108' fill='%232f5d4f'/%3E%3Cg fill='none' stroke='%23f4f1e9' stroke-width='22' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M128 280h256a128 128 0 0 1-256 0Z'/%3E%3Cpath d='M128 280a128 128 0 0 1 256 0'/%3E%3Cpath d='M256 150v-32M198 165s10-14 4-34M314 165s10-14 4-34'/%3E%3Cpath d='M96 396h320'/%3E%3C/g%3E%3C/svg%3E",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
