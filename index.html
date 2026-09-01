@@ -88,6 +88,12 @@ main{position:relative;z-index:2;padding-top:20px;padding-bottom:28px}
 .view-head{margin-bottom:14px}
 .view-head h2{font-size:26px;font-weight:500}
 .view-head .sub{font-size:13px;color:var(--ink-2);margin-top:2px}
+.hero{margin:2px 0 16px;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line);
+  box-shadow:var(--sh-2);position:relative;background:var(--sunken);line-height:0}
+.hero img{width:100%;height:150px;object-fit:cover;object-position:50% 26%;display:block}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:38%;
+  background:linear-gradient(to top,color-mix(in srgb,var(--paper) 82%,transparent),transparent)}
+@media (min-width:520px){.hero img{height:190px}}
 
 /* primitives */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-2)}
@@ -310,6 +316,10 @@ nav.tabs button[aria-current="true"]::before{content:"";position:absolute;top:0;
 
   <!-- WEEK -->
   <section id="view-week" class="view active">
+    <div class="hero" id="hero">
+      <img src="/family.jpg" alt="The Mehdi-Bjerre family cooking" loading="eager"
+           onerror="this.closest('#hero').remove()">
+    </div>
     <div class="view-head">
       <h2>What's cooking at Mehdi-Bjerres this week?</h2>
       <div class="sub">Tap a day to add a meal.</div>

@@ -4,7 +4,8 @@
 $port = 8080
 $root = $PSScriptRoot
 $types = @{ ".html"="text/html; charset=utf-8"; ".json"="application/json; charset=utf-8";
-           ".js"="text/javascript; charset=utf-8"; ".css"="text/css; charset=utf-8"; ".svg"="image/svg+xml" }
+           ".js"="text/javascript; charset=utf-8"; ".css"="text/css; charset=utf-8"; ".svg"="image/svg+xml";
+           ".jpg"="image/jpeg"; ".jpeg"="image/jpeg"; ".png"="image/png"; ".webp"="image/webp" }
 $l = New-Object System.Net.HttpListener
 $l.Prefixes.Add("http://localhost:$port/")
 $l.Start()
