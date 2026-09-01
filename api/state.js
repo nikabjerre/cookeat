@@ -5,8 +5,19 @@
 // Works without a database too: if no Upstash env vars are set it reports
 // { error: "no_database" } and the app falls back to this-device-only storage.
 
-const URL_ENV = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || "";
-const TOKEN_ENV = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || "";
+// Accept whatever the Vercel/Upstash integration provides:
+//  - explicit REST creds (UPSTASH_REDIS_REST_URL / _TOKEN, or KV_REST_API_URL / _TOKEN)
+//  - or just a connection string (REDIS_URL / KV_URL) -> derive the REST endpoint from it
+function restCreds() {
+  let url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || "";
+  let token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || "";
+  if (url && token) return { url, token };
+  const conn = process.env.REDIS_URL || process.env.KV_URL || process.env.UPSTASH_REDIS_URL || "";
+  const m = /^rediss?:\/\/([^:@/]*):([^@]+)@([^:/?]+)/i.exec(conn);
+  if (m) return { url: "https://" + m[3], token: decodeURIComponent(m[2]) };
+  return { url, token };
+}
+const { url: URL_ENV, token: TOKEN_ENV } = restCreds();
 const KEY = "familydinner:state:v1";
 
 const EMPTY = () => ({
