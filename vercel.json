@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["fra1"],
   "functions": {
     "api/parse-recipe.js": { "maxDuration": 30 },
     "api/state.js": { "maxDuration": 15 }
