@@ -1,9 +1,13 @@
 {
-  "name": "family-dinner",
+  "name": "cookeat",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Recipe book, weekly meal plan and auto grocery list for the family.",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "redis": "^4.7.0"
   }
 }
