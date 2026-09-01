@@ -172,6 +172,30 @@ label.fld .lc{text-transform:none;letter-spacing:0;color:var(--ink-3);font-weigh
   background:transparent;box-shadow:none;font-weight:500}
 .addmeal:hover{color:var(--accent-strong);border-color:var(--accent)}
 
+/* category picker (segmented bar) */
+.catbar{display:flex;gap:6px;flex-wrap:wrap}
+.catopt{border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);border-radius:999px;
+  padding:7px 13px;font-size:13px;font-weight:500;transition:background .14s,border-color .14s,color .14s}
+.catopt:hover{border-color:var(--ink-3)}
+.catopt.on{background:var(--accent);border-color:transparent;color:#fdfcf8}
+@media (prefers-color-scheme:dark){.catopt.on{color:#181611}}
+.catfilter{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;scrollbar-width:none}
+.catfilter::-webkit-scrollbar{display:none}
+.r-cat{font-family:var(--ff-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);
+  margin-top:5px;display:inline-flex;align-items:center;gap:4px}
+.r-cat::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.tag.cat{color:var(--ink-3)}
+.combine-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 10px}
+.combine-row .gweek{margin:0}
+.toggle{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2);flex-shrink:0;
+  border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:5px 10px 5px 8px;box-shadow:var(--sh-1)}
+.toggle .sw{width:30px;height:17px;border-radius:999px;background:var(--line-2);position:relative;transition:background .16s;flex-shrink:0}
+.toggle .sw::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;
+  box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .16s}
+.toggle[aria-pressed="true"] .sw{background:var(--accent)}
+.toggle[aria-pressed="true"] .sw::after{transform:translateX(13px)}
+.g-qty{font-variant-numeric:tabular-nums}
+
 /* RECIPES */
 .addrow{display:flex;flex-direction:column;gap:11px;padding:16px;margin-bottom:16px}
 .addrow .line2{display:flex;gap:8px}
@@ -350,12 +374,15 @@ nav.tabs button[aria-current="true"]::before{content:"";position:absolute;top:0;
       </div>
       <div>
         <label class="fld" for="r-name">Name <span class="lc">— optional, we'll fill it in</span></label>
-        <div class="line2">
-          <input type="text" id="r-name" placeholder="e.g. Grandma's lasagne" autocomplete="off">
-          <button class="btn primary" id="r-add">Add</button>
-        </div>
+        <input type="text" id="r-name" placeholder="e.g. Grandma's lasagne" autocomplete="off">
       </div>
+      <div>
+        <label class="fld">Category <span class="lc">— optional</span></label>
+        <div class="catbar" id="r-cat" data-cat=""></div>
+      </div>
+      <button class="btn primary" id="r-add" style="width:100%">Add recipe</button>
     </div>
+    <div class="catfilter" id="cat-filter"></div>
     <div id="recipe-list"></div>
   </section>
 
@@ -376,7 +403,12 @@ nav.tabs button[aria-current="true"]::before{content:"";position:absolute;top:0;
       <button class="btn sm ghost today-btn" id="g-thisweek">This week</button>
     </div>
     <div class="gchips" id="g-chips"></div>
-    <p class="gweek" id="g-week">–</p>
+    <div class="combine-row">
+      <p class="gweek" id="g-week">–</p>
+      <button class="toggle" id="g-combine" aria-pressed="true" title="Add up amounts for the same ingredient">
+        <span class="sw"></span> Combine amounts
+      </button>
+    </div>
     <div class="card glist" id="g-derived"></div>
     <div class="gactions">
       <button class="btn sm" id="g-uncheck">Uncheck all</button>
@@ -439,6 +471,85 @@ const ICON = {
   ext: svg('<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>'),
   chev: svg('<path d="m9 6 6 6-6 6"/>'),
 };
+
+/* ---------------- categories ---------------- */
+const CATS = [['main','Main'],['starter','Starter'],['dessert','Dessert'],['bread','Bread']];
+const catLabel = k => { const c = CATS.find(x => x[0] === k); return c ? c[1] : ''; };
+function catPicker(current){
+  return '<div class="catbar" data-cat="'+esc(current||'')+'">' +
+    CATS.map(([k,l]) => '<button type="button" class="catopt'+(current===k?' on':'')+'" data-catk="'+k+'">'+l+'</button>').join('') +
+  '</div>';
+}
+function wireCatPicker(root){
+  const bar = root.querySelector('.catbar'); if(!bar) return;
+  bar.querySelectorAll('[data-catk]').forEach(b => b.onclick = () => {
+    bar.dataset.cat = (bar.dataset.cat === b.dataset.catk) ? '' : b.dataset.catk;
+    bar.querySelectorAll('[data-catk]').forEach(x => x.classList.toggle('on', x.dataset.catk === bar.dataset.cat));
+  });
+}
+
+/* ---------------- ingredient parsing (for combining amounts) ---------------- */
+const FRAC = {'½':.5,'¼':.25,'¾':.75,'⅓':1/3,'⅔':2/3,'⅛':.125,'⅜':.375,'⅝':.625,'⅞':.875,'⅕':.2,'⅖':.4,'⅗':.6,'⅘':.8};
+const UNIT_MAP = {
+  g:'g',gram:'g',grams:'g',gr:'g', kg:'kg',kilo:'kg',kilos:'kg',kilogram:'kg', mg:'mg',
+  ml:'ml',cl:'cl',dl:'dl',l:'l',liter:'l',litre:'l',liters:'l',litres:'l',
+  tsp:'tsp',teaspoon:'tsp',teaspoons:'tsp',tsk:'tsp',
+  tbsp:'tbsp',tbs:'tbsp',tablespoon:'tbsp',tablespoons:'tbsp',spsk:'tbsp',
+  cup:'cup',cups:'cup', clove:'clove',cloves:'clove',fed:'clove',
+  can:'can',cans:'can',tin:'can',tins:'can','dåse':'can','dåser':'can',
+  pack:'pack',packs:'pack',packet:'pack',packets:'pack',pkt:'pack','pakke':'pack','pakker':'pack',
+  bunch:'bunch',bunches:'bunch',bundt:'bunch', sprig:'sprig',sprigs:'sprig',
+  pinch:'pinch',pinches:'pinch',knivspids:'pinch', handful:'handful',handfuls:'handful',
+  slice:'slice',slices:'slice',skive:'slice',skiver:'slice',
+  jar:'jar',jars:'jar',glas:'jar', bottle:'bottle',bottles:'bottle',flaske:'bottle',
+  stk:'',stks:'',pcs:'',pc:'',piece:'',pieces:'',stykker:'',stykke:'',
+};
+function parseQty(tok){
+  tok = tok.trim().replace(',', '.');
+  let m = tok.match(/^(\d*\.?\d+)\s*[-–—]\s*(\d*\.?\d+)$/);        if(m) return parseFloat(m[2]);
+  m = tok.match(/^(\d+)\s+(\d+)\/(\d+)$/);                         if(m) return +m[1] + (+m[2])/(+m[3]);
+  m = tok.match(/^(\d+)\s*([½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘])$/);                    if(m) return +m[1] + FRAC[m[2]];
+  m = tok.match(/^(\d+)\/(\d+)$/);                                 if(m) return (+m[1])/(+m[2]);
+  if(FRAC[tok] != null) return FRAC[tok];
+  if(/^\d*\.?\d+$/.test(tok)) return parseFloat(tok);
+  return null;
+}
+function singularWord(w){
+  if(w.length <= 3) return w;
+  if(/ies$/.test(w)) return w.slice(0,-3) + 'y';
+  if(/(ses|xes|zes|ches|shes)$/.test(w)) return w.slice(0,-2);
+  if(/ss$/.test(w)) return w;
+  if(/s$/.test(w)) return w.slice(0,-1);
+  return w;
+}
+function parseIngredient(raw){
+  let s = String(raw||'').trim().replace(/^[•\-*·]\s*/, '');
+  const qm = s.match(/^\s*(\d*\.?\d+\s*[-–—]\s*\d*\.?\d+|\d+\s+\d+\/\d+|\d+\s*[½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘]|\d+\/\d+|\d*[.,]?\d+|[½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘])\s*/);
+  let qty = null;
+  if(qm){ qty = parseQty(qm[1]); if(qty != null) s = s.slice(qm[0].length); }
+  let unit = '';
+  const um = s.match(/^([a-zæøå]+)\.?\s+/i);
+  if(um){ const u = um[1].toLowerCase(); if(Object.prototype.hasOwnProperty.call(UNIT_MAP, u)){ unit = UNIT_MAP[u]; s = s.slice(um[0].length); } }
+  s = s.replace(/^(of|af)\s+/i, '').trim();
+  const name = s.replace(/\s*\([^)]*\)\s*$/,'').replace(/,.*$/,'').replace(/\s+/g,' ').trim();
+  const nameKey = name.toLowerCase().split(' ').filter(Boolean).map(singularWord).sort().join(' ');
+  return { qty, unit, name, nameKey };
+}
+function fmtQty(n){
+  const r = Math.round(n*100)/100;
+  if(Number.isInteger(r)) return String(r);
+  const whole = Math.floor(r), f = Math.round((r-whole)*100)/100;
+  const nice = {0.25:'¼',0.5:'½',0.75:'¾',0.33:'⅓',0.67:'⅔',0.13:'⅛',0.2:'⅕'};
+  if(nice[f]) return (whole ? whole : '') + nice[f];
+  return String(r);
+}
+function plural(name, n){
+  if(n === 1 || !name) return name;
+  const last = name.split(' ').pop();
+  if(/[^aeiou]y$/i.test(last)) return name.replace(/y$/i,'ies');
+  if(/(s|x|z|ch|sh)$/i.test(last)) return name + 'es';
+  return name + 's';
+}
 
 function mondayOf(d){ const x=new Date(d); const wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); x.setHours(0,0,0,0); return x; }
 function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
@@ -632,12 +743,16 @@ function mealRow(di, m){
       name = r.url
         ? '<a href="'+esc(r.url)+'" target="_blank" rel="noopener">'+esc(r.name||hostOf(r.url))+'<span class="ext-i">'+ICON.ext+'</span></a>'
         : esc(r.name||'Recipe');
-      meta = '<span class="tag recipe">recipe</span>' + (ings.length ? '<span>'+ings.length+' ingredient'+(ings.length>1?'s':'')+'</span>' : '');
+      meta = '<span class="tag recipe">recipe</span>' +
+        (r.category ? '<span class="tag cat">'+esc(catLabel(r.category))+'</span>' : '') +
+        (ings.length ? '<span>'+ings.length+' ingredient'+(ings.length>1?'s':'')+'</span>' : '');
     }
   } else {
     ings = m.ingredients || [];
     name = '<button class="m-edit" data-editmeal="'+key+'">'+esc(m.title || 'Meal')+'<span class="pen">'+ICON.pencil+'</span></button>';
-    meta = '<span class="tag manual">manual</span>' + (ings.length ? '<span>'+ings.length+' item'+(ings.length>1?'s':'')+'</span>' : '<span>add ingredients</span>');
+    meta = '<span class="tag manual">manual</span>' +
+      (m.category ? '<span class="tag cat">'+esc(catLabel(m.category))+'</span>' : '') +
+      (ings.length ? '<span>'+ings.length+' item'+(ings.length>1?'s':'')+'</span>' : '<span>add ingredients</span>');
   }
   const expanded = mealExpanded.has(key);
   return '<div class="meal">' +
@@ -656,15 +771,18 @@ function editMealSheet(di, id){
     '<h3>Edit meal · '+WD[(d.getDay()+6)%7]+' '+fmtD(d)+'</h3>' +
     '<label class="fld" for="em-title">Meal</label>' +
     '<input type="text" id="em-title" value="'+esc(m.title||'')+'">' +
-    '<label class="fld" for="em-ing" style="margin-top:10px">Ingredients for the grocery list — one per line</label>' +
+    '<label class="fld" style="margin-top:12px">Category</label>' + catPicker(m.category) +
+    '<label class="fld" for="em-ing" style="margin-top:12px">Ingredients for the grocery list — one per line</label>' +
     '<textarea id="em-ing" placeholder="2 salmon fillets&#10;bag of salad&#10;lemon">'+esc((m.ingredients||[]).join('\n'))+'</textarea>' +
     '<button class="btn primary" id="em-save" style="margin-top:14px;width:100%">Save</button>' +
     '<button class="btn ghost" id="em-del" style="margin-top:8px;width:100%;color:var(--danger)">Remove this meal</button>'
   );
+  wireCatPicker($('#sheet-body'));
   $('#em-save').onclick = () => {
     const title = $('#em-title').value.trim() || 'Meal';
+    const cat = $('#sheet-body .catbar').dataset.cat || '';
     const ing = $('#em-ing').value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
-    mutate(s => { const t = (s.plan[di]||[]).find(x => x.id === id); if(t){ t.title = title; t.ingredients = ing; } });
+    mutate(s => { const t = (s.plan[di]||[]).find(x => x.id === id); if(t){ t.title = title; t.ingredients = ing; t.category = cat; } });
     closeSheet(); toast('Saved');
   };
   $('#em-del').onclick = () => {
@@ -684,10 +802,12 @@ function addMealSheet(di){
     '<div class="sheet-divider">or</div>' +
     '<label class="fld" for="mm-title">Meal (not linked to a recipe)</label>' +
     '<input type="text" id="mm-title" placeholder="e.g. Leftovers / Order pizza / Fish &amp; salad">' +
-    '<label class="fld" for="mm-ing" style="margin-top:10px">Ingredients for the list — optional, one per line</label>' +
+    '<label class="fld" style="margin-top:12px">Category</label>' + catPicker('') +
+    '<label class="fld" for="mm-ing" style="margin-top:12px">Ingredients for the list — optional, one per line</label>' +
     '<textarea id="mm-ing" placeholder="2 salmon fillets&#10;bag of salad&#10;lemon"></textarea>' +
     '<button class="btn primary" id="mm-add" style="margin-top:10px;width:100%">Add manual meal</button>'
   );
+  wireCatPicker($('#sheet-body'));
   const q = $('#pk-q');
   if(q) q.oninput = () => {
     const v = norm(q.value);
@@ -700,7 +820,8 @@ function addMealSheet(di){
     const title = $('#mm-title').value.trim();
     if(!title){ $('#mm-title').focus(); return; }
     const ing = $('#mm-ing').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-    mutate(s => { (s.plan[di] = s.plan[di]||[]).push({ id:uid(), kind:'manual', title, ingredients:ing }); });
+    const cat = $('#sheet-body .catbar').dataset.cat || '';
+    mutate(s => { (s.plan[di] = s.plan[di]||[]).push({ id:uid(), kind:'manual', title, ingredients:ing, category:cat }); });
     closeSheet(); toast('Added');
   };
 }
@@ -725,11 +846,16 @@ function addRecipe(){
   const name = $('#r-name').value.trim();
   if(!url && !name){ $('#r-url').focus(); return; }
   if(url && !/^https?:\/\//i.test(url)){ toast('Link should start with http…'); return; }
-  const rec = { id:uid(), name, url, ingredients:[], img:null, addedAt:Date.now(), loading:!!url };
+  const category = $('#r-cat').dataset.cat || '';
+  const rec = { id:uid(), name, url, category, ingredients:[], img:null, addedAt:Date.now(), loading:!!url };
   mutate(s => s.recipes.unshift(rec));
   $('#r-url').value = ''; $('#r-name').value = '';
+  const bar = $('#r-cat'); bar.dataset.cat = ''; bar.querySelectorAll('.catopt').forEach(x => x.classList.remove('on'));
   if(url) fetchIngredients(rec.id);
 }
+// build the category picker in the add form
+$('#r-cat').innerHTML = CATS.map(([k,l]) => '<button type="button" class="catopt" data-catk="'+k+'">'+l+'</button>').join('');
+wireCatPicker($('.addrow'));
 
 async function fetchIngredients(id){
   const rec = state.recipes.find(r => r.id === id);
@@ -779,17 +905,34 @@ async function fetchIngredients(id){
   }
 }
 
+let recipeFilter = '';
 function renderRecipes(){
+  const cf = $('#cat-filter');
+  cf.style.display = state.recipes.length ? 'flex' : 'none';
+  cf.innerHTML = [['','All']].concat(CATS).map(([k,l]) => {
+    const n = k ? state.recipes.filter(r => r.category === k).length : state.recipes.length;
+    return '<button class="chip" data-catf="'+k+'" aria-pressed="'+(recipeFilter===k)+'">'+l +
+      (k && n ? '<span class="cn">'+n+'</span>' : '') + '</button>';
+  }).join('');
+  $$('#cat-filter .chip').forEach(b => b.onclick = () => { recipeFilter = b.dataset.catf; renderRecipes(); });
+
   const box = $('#recipe-list');
   if(!state.recipes.length){
     box.innerHTML = '<div class="empty"><span class="big">'+ICON.book+'</span>' +
       '<p>No recipes yet.</p><p class="hint">Paste a link above — we\'ll pull in the ingredients.</p></div>';
     return;
   }
+  const list = recipeFilter ? state.recipes.filter(r => r.category === recipeFilter) : state.recipes;
+  if(!list.length){
+    box.innerHTML = '<div class="empty"><span class="big">'+ICON.book+'</span>' +
+      '<p>Nothing in “'+esc(catLabel(recipeFilter))+'” yet.</p>' +
+      '<p class="hint">Set a category when you add or edit a recipe.</p></div>';
+    return;
+  }
   const wasOpen = new Set($$('.recipe.ings-open', box).map(e => e.id));
-  box.innerHTML = state.recipes.map(recipeCard).join('');
+  box.innerHTML = list.map(recipeCard).join('');
   wasOpen.forEach(id => { const c = $('#'+id, box); if(c){ c.classList.add('ings-open'); c.querySelector('.ing-box').classList.add('open'); } });
-  state.recipes.forEach(r => {
+  list.forEach(r => {
     const root = $('#rc-'+r.id); if(!root) return;
     const on = (sel, fn) => { const el = root.querySelector(sel); if(el) el.onclick = fn; };
     on('[data-toggle]', () => { root.classList.toggle('ings-open'); root.querySelector('.ing-box').classList.toggle('open'); });
@@ -828,6 +971,7 @@ function recipeCard(r){
           ? '<a href="'+esc(r.url)+'" target="_blank" rel="noopener">'+esc(r.name||hostOf(r.url))+'<span class="ext-i">'+ICON.ext+'</span></a>'
           : esc(r.name||'Recipe')) + '</div>' +
         (r.url ? '<div class="r-host">'+esc(hostOf(r.url))+'</div>' : '') +
+        (r.category ? '<div class="r-cat">'+esc(catLabel(r.category))+'</div>' : '') +
       '</div>' +
       '<div class="r-actions">' +
         '<button class="iconbtn" data-edit aria-label="Edit recipe">'+ICON.pencil+'</button>' +
@@ -853,10 +997,13 @@ function editRecipeSheet(id){
     '<h3>Edit recipe</h3>' +
     '<label class="fld" for="er-name">Name</label><input type="text" id="er-name" value="'+esc(r.name)+'">' +
     '<label class="fld" for="er-url" style="margin-top:10px">Link</label><input type="url" id="er-url" value="'+esc(r.url)+'">' +
-    '<button class="btn primary" id="er-save" style="margin-top:12px;width:100%">Save</button>'
+    '<label class="fld" style="margin-top:12px">Category</label>' + catPicker(r.category) +
+    '<button class="btn primary" id="er-save" style="margin-top:14px;width:100%">Save</button>'
   );
+  wireCatPicker($('#sheet-body'));
   $('#er-save').onclick = () => {
-    mutate(s => { const t = s.recipes.find(x=>x.id===id); if(t){ t.name = $('#er-name').value.trim(); t.url = $('#er-url').value.trim(); } });
+    const cat = $('#sheet-body .catbar').dataset.cat || '';
+    mutate(s => { const t = s.recipes.find(x=>x.id===id); if(t){ t.name = $('#er-name').value.trim(); t.url = $('#er-url').value.trim(); t.category = cat; } });
     closeSheet();
   };
 }
@@ -869,8 +1016,11 @@ function scopedMeals(){
   scopedDates().forEach(di => (state.plan[di]||[]).forEach(m => out.push(m)));
   return out;
 }
+const UNIT_PLURAL = new Set(['clove','can','pack','jar','slice','bottle','bunch','sprig','pinch','handful','cup']);
 function derivedGroceries(){
-  const map = new Map();  // key -> {key, text, sources:Set}
+  const combine = state.grocery.combine !== false;
+  const raws = new Map();    // norm(raw) -> {key, text, sources:Set}
+  const groups = new Map();  // gkey -> {key, unit, name, parts:[{qty,rk}], sources:Set}
   scopedMeals().forEach(m => {
     let lines = [], src = '';
     if(m.kind === 'recipe'){
@@ -878,12 +1028,44 @@ function derivedGroceries(){
       if(!r) return; lines = r.ingredients || []; src = r.name || hostOf(r.url) || 'Recipe';
     } else { lines = m.ingredients || []; src = m.title || 'Meal'; }
     lines.forEach(raw => {
-      const key = norm(raw); if(!key) return;
-      if(!map.has(key)) map.set(key, { key, text: raw.trim(), sources: new Set() });
-      map.get(key).sources.add(src);
+      const t = String(raw||'').trim(); if(!t) return;
+      const rk = norm(t); if(!rk) return;
+      if(!raws.has(rk)) raws.set(rk, { key: rk, text: t, sources: new Set() });
+      raws.get(rk).sources.add(src);
+      if(combine){
+        const p = parseIngredient(t);
+        if(!p.nameKey) return;
+        const gk = '§' + p.unit + '|' + p.nameKey;
+        if(!groups.has(gk)) groups.set(gk, { key: gk, unit: p.unit, name: p.name, parts: [], sources: new Set() });
+        const g = groups.get(gk);
+        g.parts.push({ qty: p.qty, rk });
+        g.sources.add(src);
+        if(!g.name && p.name) g.name = p.name;
+      }
     });
   });
-  return [...map.values()]
+
+  let items;
+  if(combine){
+    items = [];
+    const consumed = new Set();
+    groups.forEach(g => {
+      if(g.parts.length >= 2 && g.parts.every(p => p.qty != null)){
+        const sum = g.parts.reduce((a,p) => a + p.qty, 0);
+        const base = (g.name || '').toLowerCase().split(' ').filter(Boolean).map(singularWord).join(' ');
+        const unit = (g.unit && sum !== 1 && UNIT_PLURAL.has(g.unit)) ? plural(g.unit, 2) : g.unit;
+        const nm = g.unit ? base : plural(base, sum);
+        const text = (fmtQty(sum) + ' ' + (unit ? unit + ' ' : '') + nm).replace(/\s+/g,' ').trim();
+        items.push({ key: g.key, text, sources: g.sources, combined: true });
+        g.parts.forEach(p => consumed.add(p.rk));
+      }
+    });
+    raws.forEach(r => { if(!consumed.has(r.key)) items.push(r); });
+  } else {
+    items = [...raws.values()];
+  }
+
+  return items
     .filter(it => !state.grocery.hidden[it.key])
     .map(it => ({ ...it, text: state.grocery.edits[it.key] ?? it.text, done: !!state.grocery.done[it.key] }))
     .sort((a,b) => (a.done - b.done) || a.text.localeCompare(b.text));
@@ -919,6 +1101,11 @@ function renderGroceries(){
     : selSorted.length === 0 ? 'No days selected'
     : selSorted.length === 1 ? 'For ' + WD[(parseISO(selSorted[0]).getDay()+6)%7] + ' ' + fmtD(parseISO(selSorted[0]))
     : 'For ' + selSorted.map(d => WD[(parseISO(d).getDay()+6)%7].slice(0,3) + ' ' + parseISO(d).getDate()).join(', ');
+
+  const combineOn = state.grocery.combine !== false;
+  const cbtn = $('#g-combine');
+  cbtn.setAttribute('aria-pressed', combineOn);
+  cbtn.onclick = () => mutate(s => { s.grocery.combine = !(s.grocery.combine !== false); });
 
   const items = derivedGroceries();
   const box = $('#g-derived');
