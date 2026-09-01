@@ -173,11 +173,15 @@ label.fld .lc{text-transform:none;letter-spacing:0;color:var(--ink-3);font-weigh
 .ing-toggle:hover{color:var(--ink)}
 .ing-toggle .tw{display:inline-block;transition:transform .15s ease;color:var(--ink-3);font-size:10px}
 .recipe.ings-open .ing-toggle .tw{transform:rotate(90deg)}
-.ing-box{margin-top:6px;display:none}
+.ing-box{margin-top:8px;display:none;border-top:1px solid var(--line);padding-top:10px}
 .ing-box.open{display:block}
-.ing-line{display:flex;gap:6px;align-items:center;padding:3px 0}
-.ing-line input{flex:1;padding:7px 10px;font-size:14px}
-.ing-tools{display:flex;gap:8px;margin-top:10px}
+.ing-line{display:flex;gap:4px;align-items:center;padding:2px 0}
+.ing-line input{flex:1;padding:8px 10px;font-size:14px}
+.ing-del{flex-shrink:0;color:var(--ink-3)}
+.ing-del:hover{color:var(--danger);background:var(--danger);background:color-mix(in srgb,var(--danger) 12%,transparent)}
+.ing-del svg{width:15px;height:15px}
+.ing-add{margin-top:8px;color:var(--accent-strong)}
+.ing-tools{display:flex;gap:8px;margin-top:6px}
 .spin{width:13px;height:13px;border:2px solid var(--line-2);border-top-color:var(--accent);border-radius:50%;
   display:inline-block;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
@@ -728,7 +732,8 @@ async function fetchIngredients(id){
     if(!j.ingredients || !j.ingredients.length){
       stop('No ingredient list found on that page — add them by hand', true);
     } else {
-      toast(j.ingredients.length + ' ingredients found');
+      toast(j.ingredients.length + ' ingredients found — trim what you don’t need');
+      const b = $('#rc-'+id+' .ing-box'); if(b){ b.classList.add('open'); b.closest('.recipe').classList.add('ings-open'); }
     }
   }catch(e){
     stop(e && e.name === 'AbortError'
@@ -765,10 +770,15 @@ function renderRecipes(){
         else t.ingredients.splice(i,1);
       });
     });
+    root.querySelectorAll('[data-ingdel]').forEach(b => b.onclick = () => mutate(s => {
+      const t = s.recipes.find(x=>x.id===r.id); if(t) t.ingredients.splice(+b.dataset.ingdel, 1);
+    }));
     const addLine = root.querySelector('[data-addline]');
-    if(addLine) addLine.onclick = () => mutate(s => {
-      const t = s.recipes.find(x=>x.id===r.id); if(t) t.ingredients.push('');
-    });
+    if(addLine) addLine.onclick = () => {
+      mutate(s => { const t = s.recipes.find(x=>x.id===r.id); if(t) t.ingredients.push(''); });
+      const fresh = $$('#rc-'+r.id+' [data-ing]');
+      if(fresh.length) fresh[fresh.length-1].focus();
+    };
   });
 }
 function recipeCard(r){
@@ -791,11 +801,12 @@ function recipeCard(r){
       ? '<div class="ing-toggle"><span class="spin"></span> reading the recipe…</div>'
       : '<button class="ing-toggle" data-toggle><span class="tw">▸</span> Ingredients · '+ings.length+'</button>') +
     '<div class="ing-box">' +
-      ings.map((x,i) => '<div class="ing-line"><input type="text" data-ing="'+i+'" value="'+esc(x)+'"></div>').join('') +
-      '<div class="ing-tools">' +
-        '<button class="btn sm ghost" data-addline>'+ICON.plus+' Line</button>' +
-        (r.url ? '<button class="btn sm ghost" data-refetch>'+ICON.refresh+' Re-read site</button>' : '') +
-      '</div>' +
+      ings.map((x,i) => '<div class="ing-line">' +
+        '<input type="text" data-ing="'+i+'" value="'+esc(x)+'" placeholder="ingredient">' +
+        '<button class="ing-del iconbtn" data-ingdel="'+i+'" aria-label="Remove ingredient">'+ICON.x+'</button>' +
+      '</div>').join('') +
+      '<button class="btn sm ghost ing-add" data-addline>'+ICON.plus+' Add ingredient</button>' +
+      (r.url ? '<div class="ing-tools"><button class="btn sm ghost" data-refetch>'+ICON.refresh+' Re-read from site</button></div>' : '') +
     '</div>' +
   '</div>';
 }
