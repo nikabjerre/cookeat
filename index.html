@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <title>CookEat</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#2f5d4f" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#191712" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#b0533a" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#181611" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,9 +15,9 @@
   --paper:#f4f1e9; --surface:#fdfcf8; --sunken:#ebe6da;
   --ink:#2b2620; --ink-2:#746a5b; --ink-3:#a49a88;
   --line:#e3ded0; --line-2:#d2cbb8;
-  --accent:#2f5d4f; --accent-strong:#264a3f; --accent-wash:#e4ede8;
-  --amber:#b9752c; --amber-wash:#f2e5cf;
-  --good:#3a7a4c; --good-wash:#e2ecdf; --danger:#a94a3b;
+  --accent:#b0533a; --accent-strong:#8f4230; --accent-wash:#f1e0d8;
+  --amber:#357c69; --amber-wash:#e0ebe6;
+  --good:#3a7a4c; --good-wash:#e2ecdf; --danger:#bf3b30;
   --sh-1:0 1px 2px rgba(43,38,32,.045);
   --sh-2:0 1px 3px rgba(43,38,32,.05), 0 10px 22px -14px rgba(43,38,32,.16);
   --sh-pop:0 -8px 32px -12px rgba(43,38,32,.28);
@@ -32,9 +32,9 @@
     --paper:#181611; --surface:#221f19; --sunken:#2c2820;
     --ink:#efe9dc; --ink-2:#a89e8c; --ink-3:#7b7362;
     --line:#332f25; --line-2:#433d31;
-    --accent:#82b6a3; --accent-strong:#a6cebe; --accent-wash:#233029;
-    --amber:#d7a163; --amber-wash:#3a2d1b;
-    --good:#6fbb85; --good-wash:#25322a; --danger:#d9776a;
+    --accent:#dd8161; --accent-strong:#ea9d82; --accent-wash:#3a2318;
+    --amber:#6cae9a; --amber-wash:#22322c;
+    --good:#6fbb85; --good-wash:#25322a; --danger:#e07767;
     --sh-1:0 1px 2px rgba(0,0,0,.4);
     --sh-2:0 1px 3px rgba(0,0,0,.4), 0 12px 28px -16px rgba(0,0,0,.7);
     --sh-pop:0 -8px 34px -12px rgba(0,0,0,.6);
@@ -47,7 +47,8 @@ body{
   background:var(--paper); color:var(--ink);
   font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
-  padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom));
+  padding-bottom:calc(var(--tab-h) + 20px + env(safe-area-inset-bottom));
+  overscroll-behavior-y:none;
 }
 /* faint paper grain */
 body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.035;
@@ -201,8 +202,8 @@ label.fld .lc{text-transform:none;letter-spacing:0;color:var(--ink-3);font-weigh
 .gitem .chk{width:21px;height:21px;flex-shrink:0;border:1.5px solid var(--line-2);border-radius:6px;
   background:var(--surface);display:grid;place-items:center;color:#fdfcf8;transition:.14s;padding:0}
 .gitem .chk svg{width:13px;height:13px}
-.gitem .chk:hover{border-color:var(--good)}
-.gitem.done .chk{background:var(--good);border-color:var(--good)}
+.gitem .chk:hover{border-color:var(--accent)}
+.gitem.done .chk{background:var(--accent);border-color:var(--accent)}
 @media (prefers-color-scheme:dark){.gitem.done .chk{color:#181611}}
 .gitem.done .g-text{text-decoration:line-through;color:var(--ink-3);text-decoration-color:var(--ink-3)}
 .g-main{flex:1;min-width:0}
@@ -226,18 +227,21 @@ label.fld .lc{text-transform:none;letter-spacing:0;color:var(--ink-3);font-weigh
 .empty p{margin:0;font-family:var(--ff-display);font-style:italic;font-size:16px;font-weight:400;color:var(--ink-2)}
 .empty .hint{font-family:system-ui,sans-serif;font-style:normal;font-size:13px;color:var(--ink-3);margin-top:4px}
 
-/* tab bar */
-nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);
-  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -1px 0 rgba(43,38,32,.02)}
+/* tab bar — stays frozen at the bottom while the page scrolls */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--surface);
+  border-top:1px solid var(--line-2);padding-bottom:env(safe-area-inset-bottom);
+  box-shadow:0 -6px 20px -12px rgba(43,38,32,.18);
+  transform:translateZ(0);-webkit-backface-visibility:hidden}
 nav.tabs .wrap{display:flex;height:var(--tab-h);max-width:520px}
-nav.tabs button{flex:1;border:none;background:none;color:var(--ink-3);display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:500;letter-spacing:.01em;
+nav.tabs button{flex:1;border:none;background:none;color:var(--ink-2);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:600;letter-spacing:.02em;
   position:relative;transition:color .14s}
-nav.tabs button svg{width:21px;height:21px;stroke-width:1.6}
-nav.tabs button:hover{color:var(--ink-2)}
+nav.tabs button svg{width:24px;height:24px;stroke-width:2}
+nav.tabs button:active{color:var(--ink)}
 nav.tabs button[aria-current="true"]{color:var(--accent)}
-nav.tabs button[aria-current="true"]::before{content:"";position:absolute;top:0;width:26px;height:2px;
-  background:var(--accent);border-radius:0 0 2px 2px}
+nav.tabs button[aria-current="true"] svg{stroke-width:2.4}
+nav.tabs button[aria-current="true"]::before{content:"";position:absolute;top:0;width:30px;height:3px;
+  background:var(--accent);border-radius:0 0 3px 3px}
 
 /* toast */
 #toast{position:fixed;left:50%;transform:translateX(-50%) translateY(16px);bottom:calc(var(--tab-h) + 20px);
