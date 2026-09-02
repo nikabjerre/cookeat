@@ -4,8 +4,7 @@
 <meta charset="utf-8">
 <title>CookEat</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#2f5d4f" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#181611" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#2f5d4f">
 <link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,21 +24,7 @@
   --tab-h:60px;
   --ff-display:"Fraunces",Georgia,"Times New Roman",serif;
   --ff-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-  color-scheme:light;
-}
-@media (prefers-color-scheme:dark){
-  :root{
-    --paper:#181611; --surface:#221f19; --sunken:#2c2820;
-    --ink:#efe9dc; --ink-2:#a89e8c; --ink-3:#7b7362;
-    --line:#332f25; --line-2:#433d31;
-    --accent:#82b6a3; --accent-strong:#a6cebe; --accent-wash:#233029;
-    --amber:#d7a163; --amber-wash:#3a2d1b;
-    --good:#6fbb85; --good-wash:#25322a; --danger:#d9776a;
-    --sh-1:0 1px 2px rgba(0,0,0,.4);
-    --sh-2:0 1px 3px rgba(0,0,0,.4), 0 12px 28px -16px rgba(0,0,0,.7);
-    --sh-pop:0 -8px 34px -12px rgba(0,0,0,.6);
-    color-scheme:dark;
-  }
+  color-scheme:only light;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -102,9 +87,7 @@ main{position:relative;z-index:2;padding-top:20px;padding-bottom:28px}
   transition:background .14s,border-color .14s,transform .06s;box-shadow:var(--sh-1)}
 .btn:hover{border-color:var(--ink-3)}
 .btn:active{transform:translateY(.5px)}
-.btn.primary{background:var(--accent);border-color:transparent;color:#fdfcf8;box-shadow:0 1px 2px rgba(38,74,63,.3)}
-@media (prefers-color-scheme:dark){.btn.primary{color:#181611}}
-.btn.primary:hover{background:var(--accent-strong)}
+.btn.primary{background:var(--accent);border-color:transparent;color:#fdfcf8;box-shadow:0 1px 2px rgba(38,74,63,.3)}.btn.primary:hover{background:var(--accent-strong)}
 .btn.ghost{background:transparent;box-shadow:none;border-color:transparent}
 .btn.ghost:hover{background:var(--sunken);border-color:transparent}
 .btn.sm{padding:6px 11px;font-size:13px;border-radius:var(--r-sm)}
@@ -178,7 +161,6 @@ label.fld .lc{text-transform:none;letter-spacing:0;color:var(--ink-3);font-weigh
   padding:7px 13px;font-size:13px;font-weight:500;transition:background .14s,border-color .14s,color .14s}
 .catopt:hover{border-color:var(--ink-3)}
 .catopt.on{background:var(--accent);border-color:transparent;color:#fdfcf8}
-@media (prefers-color-scheme:dark){.catopt.on{color:#181611}}
 .catfilter{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;scrollbar-width:none}
 .catfilter::-webkit-scrollbar{display:none}
 .r-cat{font-family:var(--ff-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);
@@ -237,7 +219,6 @@ label.fld .lc{text-transform:none;letter-spacing:0;color:var(--ink-3);font-weigh
   border-radius:999px;min-width:16px;height:16px;display:inline-grid;place-items:center;padding:0 3px}
 .chip.today:not([aria-pressed="true"]){border-color:var(--amber);color:var(--amber)}
 .chip[aria-pressed="true"]{background:var(--accent);border-color:transparent;color:#fdfcf8}
-@media (prefers-color-scheme:dark){.chip[aria-pressed="true"]{color:#181611}}
 .chip[aria-pressed="true"] .cn{background:rgba(253,252,248,.22);color:inherit}
 .gweek{font-family:var(--ff-mono);font-size:12px;letter-spacing:.02em;color:var(--ink-2);margin:2px 0 12px}
 .glist{padding:4px 0;overflow:hidden}
@@ -248,7 +229,6 @@ label.fld .lc{text-transform:none;letter-spacing:0;color:var(--ink-3);font-weigh
 .gitem .chk svg{width:13px;height:13px}
 .gitem .chk:hover{border-color:var(--good)}
 .gitem.done .chk{background:var(--good);border-color:var(--good)}
-@media (prefers-color-scheme:dark){.gitem.done .chk{color:#181611}}
 .gitem.done .g-text{text-decoration:line-through;color:var(--ink-3);text-decoration-color:var(--ink-3)}
 .g-main{flex:1;min-width:0}
 .g-text{font-size:15px;font-weight:500}
